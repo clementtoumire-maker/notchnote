@@ -25,6 +25,8 @@
 		F7238CE4A2ED2F411CDDDC0E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857AE5B56C1423118C9567B8 /* SettingsView.swift */; };
 		E5A1457C3B4433A6B6D6B583 /* AddTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472F0E46ABBFAC6712A4608E /* AddTaskIntent.swift */; };
 		0839B55F35B48A533961F035 /* CalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB2BCD714B4176258268A2AC /* CalendarService.swift */; };
+		3EFC77FB630B6E5F7ECFA0B7 /* FocusTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD8F1DFF8B33E42A2F537527 /* FocusTimer.swift */; };
+		3D3AAD5A0FC13B21CA9C5E27 /* Planner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9461A03BD9D04D6D6F129ECC /* Planner.swift */; };
 		9B488FD03B126F2E8C1AE508 /* ReminderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0EFF2421A598EA9ECB02C99 /* ReminderService.swift */; };
 		3D857583F8DB1E30F8476503 /* SpotlightIndexer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CB7A9D6165205ACE0ADA0A5 /* SpotlightIndexer.swift */; };
 		255320B63FA2FBF2C628B292 /* TaskWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CC4225ED8859D8A6276F064 /* TaskWindowView.swift */; };
@@ -50,6 +52,8 @@
 		857AE5B56C1423118C9567B8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		472F0E46ABBFAC6712A4608E /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
 		EB2BCD714B4176258268A2AC /* CalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarService.swift; sourceTree = "<group>"; };
+		CD8F1DFF8B33E42A2F537527 /* FocusTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusTimer.swift; sourceTree = "<group>"; };
+		9461A03BD9D04D6D6F129ECC /* Planner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Planner.swift; sourceTree = "<group>"; };
 		F0EFF2421A598EA9ECB02C99 /* ReminderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReminderService.swift; sourceTree = "<group>"; };
 		8CB7A9D6165205ACE0ADA0A5 /* SpotlightIndexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotlightIndexer.swift; sourceTree = "<group>"; };
 		9CC4225ED8859D8A6276F064 /* TaskWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskWindowView.swift; sourceTree = "<group>"; };
@@ -155,6 +159,8 @@
 			children = (
 				472F0E46ABBFAC6712A4608E /* AddTaskIntent.swift */,
 				EB2BCD714B4176258268A2AC /* CalendarService.swift */,
+				CD8F1DFF8B33E42A2F537527 /* FocusTimer.swift */,
+				9461A03BD9D04D6D6F129ECC /* Planner.swift */,
 				F0EFF2421A598EA9ECB02C99 /* ReminderService.swift */,
 				8CB7A9D6165205ACE0ADA0A5 /* SpotlightIndexer.swift */,
 			);
@@ -264,6 +270,8 @@
 				F7238CE4A2ED2F411CDDDC0E /* SettingsView.swift in Sources */,
 				E5A1457C3B4433A6B6D6B583 /* AddTaskIntent.swift in Sources */,
 				0839B55F35B48A533961F035 /* CalendarService.swift in Sources */,
+				3EFC77FB630B6E5F7ECFA0B7 /* FocusTimer.swift in Sources */,
+				3D3AAD5A0FC13B21CA9C5E27 /* Planner.swift in Sources */,
 				9B488FD03B126F2E8C1AE508 /* ReminderService.swift in Sources */,
 				3D857583F8DB1E30F8476503 /* SpotlightIndexer.swift in Sources */,
 				255320B63FA2FBF2C628B292 /* TaskWindowView.swift in Sources */,

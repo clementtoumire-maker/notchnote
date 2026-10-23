@@ -35,6 +35,17 @@ struct SettingsView: View {
                 Button("Send a test reminder now") { ReminderService.shared.sendNow() }
             }
 
+            Section("Planning") {
+                Picker("Daily workload limit", selection: $settings.dailyLimitHours) {
+                    ForEach([2, 3, 4, 6, 8], id: \.self) { Text("\($0) hours").tag($0) }
+                }
+                Picker("Focus session length", selection: $settings.focusMinutes) {
+                    ForEach([10, 15, 25, 30, 45, 50, 60, 90], id: \.self) { Text("\($0) minutes").tag($0) }
+                }
+                Text("Today adds up the time estimates of what you planned and warns when it passes your limit.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
             Section("Sync folder") {
                 HStack {
                     Text(settings.syncFolderPath ?? "Not set (tasks stay on this Mac)")

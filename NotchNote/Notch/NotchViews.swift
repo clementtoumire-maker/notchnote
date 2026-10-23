@@ -128,6 +128,7 @@ struct NotchPanelView: View {
     @ObservedObject private var store = TaskStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    @ObservedObject private var focus = FocusTimer.shared
     @State private var editingTitle = false
     @State private var dropTargeted = false
     @State private var resizeStart: CGSize?
@@ -226,6 +227,24 @@ struct NotchPanelView: View {
                     .font(.system(size: 10.5).monospacedDigit())
                     .padding(.horizontal, 7).padding(.vertical, 1)
                     .background(Capsule().fill(t.uncheckedCount == 0 ? Color.green.opacity(0.28) : Color.white.opacity(0.12)))
+            }
+
+            if focus.isRunning {
+                Menu {
+                    Button(focus.paused ? "Resume" : "Pause") { focus.togglePause() }
+                    Button("Add 5 minutes") { focus.add(minutes: 5) }
+                    Button("Remove 5 minutes") { focus.add(minutes: -5) }
+                    Divider()
+                    Button("Stop session") { focus.stop() }
+                } label: {
+                    Text((focus.paused ? "\u{275A}\u{275A} " : "\u{25CF} ") + focus.clock)
+                        .font(.system(size: 11).monospacedDigit())
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 9).padding(.vertical, 2)
+                        .background(Capsule().fill(Color(red: 1, green: 0.84, blue: 0.04)))
+                }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .help("Focus: \(focus.title)")
             }
 
             Spacer(minLength: 4)
@@ -397,52 +416,140 @@ struct CardsView: View {
 }
 
 
-// MARK: - Today (calendar)
+// MARK: - Today (plan the day)
 
 struct TodayView: View {
     @ObservedObject var state: PanelState
     @ObservedObject private var cal = CalendarService.shared
+    @ObservedObject private var store = TaskStore.shared
+    @ObservedObject private var settings = AppSettings.shared
+    @ObservedObject private var focus = FocusTimer.shared
+    @State private var quick = ""
+    @State private var tagFilter: String?
+
     private static let timeFormat: DateFormatter = {
         let f = DateFormatter(); f.timeStyle = .short; f.dateStyle = .none; return f
     }()
 
+    private var allItems: [PlanItem] { Planner.items(from: store.tasks) }
+    private var items: [PlanItem] {
+        guard let t = tagFilter else { return allItems }
+        return allItems.filter { $0.tags.contains(t) }
+    }
+    private var todayItems: [PlanItem] {
+        let t = items.filter { $0.isToday }
+        return t.filter { !$0.checked } + t.filter { $0.checked }
+    }
+    private var suggestions: [PlanItem] { Array(items.filter { !$0.checked && !$0.hasDate }.prefix(5)) }
+    private var tags: [String] { Array(Set(allItems.flatMap { $0.tags })).sorted() }
+    private var plannedMinutes: Int { items.filter { $0.isToday && !$0.checked }.reduce(0) { $0 + $1.minutes } }
+    private var meetingMinutes: Int {
+        guard cal.access == .granted else { return 0 }
+        return cal.events.filter { !$0.isAllDay }.reduce(0) { $0 + Int($1.end.timeIntervalSince($1.start) / 60) }
+    }
+
     var body: some View {
-        Group {
-            switch cal.access {
-            case .granted:
-                if cal.events.isEmpty {
-                    placeholder("calendar", "No more events today.")
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 6) {
-                            ForEach(cal.events) { ev in row(ev) }
-                        }
+        let limit = settings.dailyLimitHours * 60
+        let over = plannedMinutes > limit
+        ScrollView {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("Today").font(.system(size: 15, weight: .bold))
+                    let done = todayItems.filter { $0.checked }.count
+                    Text("\(done) of \(todayItems.count) done \u{00B7} planned \(fmt(plannedMinutes)) of \(settings.dailyLimitHours)h"
+                         + (meetingMinutes > 0 ? " \u{00B7} \(fmt(meetingMinutes)) in meetings" : ""))
+                        .font(.system(size: 11.5).monospacedDigit()).opacity(0.65)
+                }
+                GeometryReader { g in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(Color.white.opacity(0.14))
+                        Capsule().fill(over ? Color.red : yellow)
+                            .frame(width: g.size.width * min(1, CGFloat(plannedMinutes) / CGFloat(max(limit, 1))))
                     }
                 }
-            case .denied:
-                VStack(spacing: 8) {
-                    placeholder("calendar.badge.exclamationmark", "Calendar access is off.")
-                    Button("Open Calendar privacy settings") { cal.openPrivacySettings() }
+                .frame(height: 5)
+                if over {
+                    Text("That is over your \(settings.dailyLimitHours) hour limit. Move something to tomorrow with the arrow.")
+                        .font(.system(size: 11.5)).foregroundStyle(Color(red: 1, green: 0.82, blue: 0.8))
+                        .padding(.horizontal, 9).padding(.vertical, 5)
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Color.red.opacity(0.2)))
                 }
-            case .unknown:
-                VStack(spacing: 8) {
-                    placeholder("calendar", "See today\u{2019}s events here and start a note for any meeting.")
-                    Button("Connect Calendar") { cal.requestAccess() }
+                if !tags.isEmpty { tagBar }
+                agenda
+                section("To do today")
+                TextField("Add to today\u{2026} e.g. call the client p1 30m #work", text: $quick)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12.5))
+                    .padding(.horizontal, 9).padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.1)))
+                    .onSubmit {
+                        Planner.addToday(quick)
+                        quick = ""
+                    }
+                if todayItems.isEmpty {
+                    Text("Nothing planned. Type above, or pick from the suggestions.")
+                        .font(.system(size: 11)).opacity(0.6).padding(.horizontal, 8)
+                }
+                ForEach(todayItems) { row($0, suggestion: false) }
+                if !suggestions.isEmpty {
+                    section("Suggestions")
+                    ForEach(suggestions) { row($0, suggestion: true) }
                 }
             }
+            .padding(.trailing, 2)
         }
         .onAppear { cal.refreshAuthorization() }
     }
 
-    private func placeholder(_ icon: String, _ text: String) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 22)).opacity(0.5)
-            Text(text).font(.system(size: 12)).opacity(0.65).multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    private var yellow: Color { Color(red: 1, green: 0.84, blue: 0.04) }
+
+    private func fmt(_ m: Int) -> String {
+        let h = m / 60, r = m % 60
+        return h > 0 ? (r > 0 ? "\(h)h \(r)m" : "\(h)h") : "\(r)m"
     }
 
-    private func row(_ ev: CalendarService.CalEvent) -> some View {
+    private func section(_ t: String) -> some View {
+        Text(t.uppercased()).font(.system(size: 10.5, weight: .medium)).tracking(0.6).opacity(0.55).padding(.top, 6).padding(.leading, 2)
+    }
+
+    private var tagBar: some View {
+        HStack(spacing: 4) {
+            chip("All", selected: tagFilter == nil) { tagFilter = nil }
+            ForEach(tags, id: \.self) { t in chip("#" + t, selected: tagFilter == t) { tagFilter = t } }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func chip(_ t: String, selected: Bool, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(t).font(.system(size: 11.5)).padding(.horizontal, 10).padding(.vertical, 3)
+                .background(Capsule().fill(Color.white.opacity(selected ? 0.24 : 0.1)))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Agenda
+
+    @ViewBuilder private var agenda: some View {
+        switch cal.access {
+        case .granted:
+            if !cal.events.isEmpty {
+                section("Agenda")
+                ForEach(cal.events) { eventRow($0) }
+            }
+        case .denied:
+            Button("Calendar access is off. Open privacy settings") { cal.openPrivacySettings() }
+                .buttonStyle(.plain).font(.system(size: 11.5)).padding(.vertical, 4).opacity(0.8)
+        case .unknown:
+            Button { cal.requestAccess() } label: {
+                Text("Connect Calendar to see meetings here").font(.system(size: 11.5)).frame(maxWidth: .infinity).padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.1)))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func eventRow(_ ev: CalendarService.CalEvent) -> some View {
         HStack(spacing: 10) {
             VStack(alignment: .trailing, spacing: 1) {
                 Text(ev.isAllDay ? "All day" : Self.timeFormat.string(from: ev.start))
@@ -451,7 +558,7 @@ struct TodayView: View {
                     Text(Self.timeFormat.string(from: ev.end)).font(.system(size: 10).monospacedDigit()).opacity(0.55)
                 }
             }
-            .frame(width: 64, alignment: .trailing)
+            .frame(width: 56, alignment: .trailing)
             VStack(alignment: .leading, spacing: 1) {
                 Text(ev.title).font(.system(size: 12.5, weight: .medium)).lineLimit(1)
                 Text(ev.subtitle).font(.system(size: 10.5)).opacity(0.55).lineLimit(1)
@@ -462,14 +569,72 @@ struct TodayView: View {
                 TaskStore.shared.selectedID = t.id
                 state.tab = .notes
             } label: {
-                Label(cal.hasNote(for: ev) ? "Open note" : "Start note", systemImage: cal.hasNote(for: ev) ? "doc.text" : "doc.badge.plus")
-                    .labelStyle(.titleAndIcon).font(.system(size: 11))
+                Text(cal.hasNote(for: ev) ? "Open note" : "Start note").font(.system(size: 11))
+                    .padding(.horizontal, 9).padding(.vertical, 3).background(Capsule().fill(Color.white.opacity(0.14)))
             }
             .buttonStyle(.plain)
-            .padding(.horizontal, 8).padding(.vertical, 4)
-            .background(Capsule().fill(Color.white.opacity(0.14)))
         }
-        .padding(8)
+        .padding(7)
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white.opacity(0.08)))
+    }
+
+    // MARK: Items
+
+    private func row(_ item: PlanItem, suggestion: Bool) -> some View {
+        HStack(spacing: 8) {
+            Button { Planner.toggle(item) } label: {
+                ZStack {
+                    Circle().strokeBorder(Color.white.opacity(0.5), lineWidth: 1.5).opacity(item.checked ? 0 : 1)
+                    Circle().fill(yellow).opacity(item.checked ? 1 : 0)
+                    Image(systemName: "checkmark").font(.system(size: 8, weight: .bold)).foregroundStyle(.black).opacity(item.checked ? 1 : 0)
+                }
+                .frame(width: 17, height: 17)
+            }
+            .buttonStyle(.plain)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.text).font(.system(size: 12.5)).lineLimit(1)
+                    .strikethrough(item.checked).opacity(item.checked ? 0.45 : 1)
+                Text(subtitle(item)).font(.system(size: 10.5)).opacity(0.55).lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            if suggestion {
+                pill("\u{FF0B} Today") { Planner.planForToday(item) }
+            } else if !item.checked {
+                pill("\u{25B6} \(settings.focusMinutes)m") { focus.start(item.text, minutes: settings.focusMinutes) }
+                Menu {
+                    ForEach([10, 15, 25, 45, 50, 60, 90], id: \.self) { m in
+                        Button("\(m) minutes") { focus.start(item.text, minutes: m) }
+                    }
+                } label: {
+                    Image(systemName: "timer").font(.system(size: 11)).padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(Capsule().fill(Color.white.opacity(0.14)))
+                }
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                .help("Choose the focus length")
+                Button { Planner.moveToTomorrow(item) } label: {
+                    Image(systemName: "arrow.right").font(.system(size: 11)).padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(Capsule().fill(Color.white.opacity(0.14)))
+                }
+                .buttonStyle(.plain)
+                .help("Move to tomorrow")
+            }
+        }
+        .padding(.horizontal, 8).padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.white.opacity(0.08)))
+    }
+
+    private func pill(_ t: String, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(t).font(.system(size: 11)).padding(.horizontal, 9).padding(.vertical, 3)
+                .background(Capsule().fill(Color.white.opacity(0.14)))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func subtitle(_ i: PlanItem) -> String {
+        var parts = [i.taskTitle]
+        switch i.priority { case "h": parts.append("High"); case "m": parts.append("Medium"); case "l": parts.append("Low"); default: break }
+        if i.minutes > 0 { parts.append(fmt(i.minutes)) }
+        return parts.joined(separator: " \u{00B7} ")
     }
 }

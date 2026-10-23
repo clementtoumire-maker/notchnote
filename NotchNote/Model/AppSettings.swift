@@ -18,6 +18,8 @@ final class AppSettings: ObservableObject {
     /// Optional anonymous usage data. Default OFF. Nothing is ever sent: there is no networking code
     /// in this app. The flag exists so the setting and its wording match the original app.
     @Published var usageDataEnabled: Bool { didSet { d.set(usageDataEnabled, forKey: "usageDataEnabled") } }
+    @Published var dailyLimitHours: Int { didSet { d.set(dailyLimitHours, forKey: "dailyLimitHours") } }
+    @Published var focusMinutes: Int { didSet { d.set(focusMinutes, forKey: "focusMinutes") } }
     @Published var hasOnboarded: Bool { didSet { d.set(hasOnboarded, forKey: "hasOnboarded") } }
     @Published var lastSelectedTaskID: String? { didSet { d.set(lastSelectedTaskID, forKey: "lastSelectedTaskID") } }
 
@@ -34,6 +36,8 @@ final class AppSettings: ObservableObject {
         panelWidth = d.object(forKey: "panelWidth") as? Double ?? 440
         panelHeight = d.object(forKey: "panelHeight") as? Double ?? 320
         usageDataEnabled = d.object(forKey: "usageDataEnabled") as? Bool ?? false
+        dailyLimitHours = d.object(forKey: "dailyLimitHours") as? Int ?? 4
+        focusMinutes = d.object(forKey: "focusMinutes") as? Int ?? 25
         hasOnboarded = d.object(forKey: "hasOnboarded") as? Bool ?? false
         lastSelectedTaskID = d.string(forKey: "lastSelectedTaskID")
     }
