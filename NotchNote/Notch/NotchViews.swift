@@ -140,6 +140,8 @@ struct NotchPanelView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @ObservedObject private var focus = FocusTimer.shared
+    @State private var showTasks = false
+    @ObservedObject private var toaster = Toaster.shared
     @State private var editingTitle = false
     @State private var dropTargeted = false
     @State private var resizeStart: CGSize?
@@ -199,23 +201,50 @@ struct NotchPanelView: View {
         .padding(.top, geo.hasNotch ? geo.hardwareNotch.height + 4 : 12)
         .padding(.horizontal, 14)
         .padding(.bottom, 8)
+        .overlay(alignment: .topLeading) {
+            if showTasks {
+                ZStack(alignment: .topLeading) {
+                    Color.black.opacity(0.001).onTapGesture { showTasks = false }
+                    TaskPickerView(isPresented: $showTasks)
+                        .padding(.leading, 10)
+                        .padding(.top, (geo.hasNotch ? geo.hardwareNotch.height + 4 : 12) + 30)
+                        .transition(.scale(scale: 0.9, anchor: .topLeading).combined(with: .opacity))
+                }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if let m = toaster.message {
+                HStack(spacing: 12) {
+                    Text(m).font(.system(size: 12.5)).lineLimit(1)
+                    if toaster.hasUndo {
+                        Button("Undo") { toaster.undo() }
+                            .buttonStyle(.plain)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Color(red: 0.55, green: 0.72, blue: 1))
+                            .padding(.horizontal, 9).padding(.vertical, 3)
+                            .background(Capsule().fill(Color.white.opacity(0.12)))
+                    }
+                }
+                .padding(.leading, 14).padding(.trailing, 8).padding(.vertical, 7)
+                .background(Capsule().fill(Color(white: 0.16).opacity(0.97)))
+                .overlay(Capsule().strokeBorder(Color.white.opacity(0.14), lineWidth: 0.8))
+                .padding(.bottom, 40)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showTasks)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: toaster.message)
+        .onChange(of: state.isOpen) { _, open in if !open { showTasks = false } }
     }
 
     private var header: some View {
         HStack(spacing: 8) {
-            Menu {
-                ForEach(store.tasks) { t in
-                    Button(t.title.isEmpty ? "Untitled" : t.title) { store.selectedID = t.id }
-                }
-                Divider()
-                Button("New Task") { store.createTask() }
-            } label: {
-                Image(systemName: "list.bullet")
+            Button { showTasks.toggle() } label: {
+                Image(systemName: "line.3.horizontal").frame(width: 22, height: 20).contentShape(Rectangle())
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .frame(width: 22)
-            .help("Switch task")
+            .buttonStyle(.plain)
+            .opacity(0.85)
+            .help("Find, switch and create tasks and folders")
 
             if editingTitle {
                 TextField("Title", text: titleBinding)
@@ -274,11 +303,56 @@ struct NotchPanelView: View {
                 if let id = store.selectedID { store.toggleFavorite(id) }
             }
             iconButton("plus", help: "New task") { store.createTask(); state.tab = .notes }
-            iconButton("macwindow", help: "Open task window") { WindowManager.shared.showTasks() }
-            iconButton(state.pinned ? "pin.fill" : "pin", help: "Keep open") { state.pinned.toggle() }
-            iconButton("gearshape", help: "Settings") { WindowManager.shared.showSettings() }
+            taskMenu
         }
         .font(.system(size: 13))
+    }
+
+    private var taskMenu: some View {
+        Menu {
+            Button("Rename") { editingTitle = true; DispatchQueue.main.async { titleFocused = true } }
+            Button(isFav ? "Remove from favorites" : "Add to favorites") {
+                if let id = store.selectedID { store.toggleFavorite(id) }
+            }
+            Button("Duplicate") { if let id = store.selectedID, store.duplicate(id) != nil { toaster.show("Duplicated") } }
+            Button("Clear done items" + ((store.selectedTask?.checkedCount ?? 0) > 0 ? " (\(store.selectedTask?.checkedCount ?? 0))" : "")) { clearDone() }
+                .disabled((store.selectedTask?.checkedCount ?? 0) == 0)
+            Menu("Move to folder") {
+                Button("No folder") { moveSelected(to: "") }
+                ForEach(settings.folders, id: \.self) { f in Button(f) { moveSelected(to: f) } }
+            }
+            Divider()
+            Button("Open task window") { WindowManager.shared.showTasks() }
+            Button(state.pinned ? "Let the panel close again" : "Keep panel open") { state.pinned.toggle() }
+            Divider()
+            Button("Delete task", role: .destructive) { deleteSelected() }
+        } label: {
+            Image(systemName: "ellipsis").frame(width: 22, height: 20).contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .opacity(0.85)
+        .help("This task")
+    }
+
+    private func clearDone() {
+        guard let id = store.selectedID, let prev = store.selectedTask?.body else { return }
+        let n = store.clearDone(id)
+        if n > 0 { toaster.show("Cleared \(n) done \(n == 1 ? "item" : "items")") { store.setBody(id, prev) } }
+    }
+
+    private func moveSelected(to folder: String) {
+        guard let id = store.selectedID, let was = store.selectedTask?.folder else { return }
+        store.setFolder(id, folder)
+        toaster.show("Moved to " + (folder.isEmpty ? "No folder" : folder)) { store.setFolder(id, was) }
+    }
+
+    private func deleteSelected() {
+        guard let t = store.selectedTask else { return }
+        let idx = store.index(of: t.id)
+        store.deleteTask(t.id)
+        toaster.show("Deleted \u{201C}\(t.title)\u{201D}") { store.restoreTask(t, at: idx) }
     }
 
     private var isFav: Bool { store.selectedTask?.isFavorite ?? false }
@@ -308,6 +382,14 @@ struct NotchPanelView: View {
 
     private var footer: some View {
         HStack(spacing: 6) {
+            if state.tab == .notes, let t = store.selectedTask, t.checkedCount > 0 {
+                Button { clearDone() } label: {
+                    Text("Clear \(t.checkedCount) done").font(.system(size: 11, weight: .medium))
+                        .padding(.horizontal, 9).padding(.vertical, 3)
+                        .background(Capsule().fill(Color.white.opacity(0.14)))
+                }
+                .buttonStyle(.plain)
+            }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     ForEach(store.favorites) { f in
@@ -323,6 +405,7 @@ struct NotchPanelView: View {
                 }
             }
             Spacer(minLength: 0)
+            iconButton("gearshape", help: "Settings") { WindowManager.shared.showSettings() }
             Image(systemName: "arrow.up.left.and.arrow.down.right")
                 .font(.system(size: 10))
                 .opacity(0.5)
@@ -383,6 +466,142 @@ struct NotchPanelView: View {
             }
         }
         return true
+    }
+}
+
+// MARK: - Task picker (the ☰ menu)
+
+struct TaskPickerView: View {
+    @Binding var isPresented: Bool
+    @ObservedObject private var store = TaskStore.shared
+    @ObservedObject private var settings = AppSettings.shared
+    @State private var query = ""
+    @State private var addingFolder = false
+    @State private var folderName = ""
+    @FocusState private var searchFocused: Bool
+
+    private var results: [NoteTask] {
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return [] }
+        return store.tasks.filter {
+            $0.title.lowercased().contains(q) || MarkdownCodec.stripInline($0.body).lowercased().contains(q)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            TextField("Search or create\u{2026}", text: $query)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12.5))
+                .padding(.horizontal, 8).padding(.vertical, 6)
+                .background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(0.12)))
+                .focused($searchFocused)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 1) {
+                    if !query.trimmingCharacters(in: .whitespaces).isEmpty {
+                        if results.isEmpty {
+                            note("No task matches \u{201C}\(query)\u{201D}.")
+                            menuButton("Create task \u{201C}\(query)\u{201D}") { create(title: query, folder: "") }
+                        } else {
+                            header("Results")
+                            ForEach(results) { row($0) }
+                        }
+                    } else {
+                        let favs = store.favorites
+                        if !favs.isEmpty { header("Favorites"); ForEach(favs) { row($0) } }
+                        ForEach(settings.folders, id: \.self) { f in
+                            header(f, plus: { create(title: "New task", folder: f) })
+                            let items = store.tasks.filter { $0.folder == f }
+                            if items.isEmpty { note("Empty folder.") }
+                            ForEach(items) { row($0) }
+                        }
+                        let loose = store.tasks.filter { !settings.folders.contains($0.folder) }
+                        if !loose.isEmpty {
+                            header(settings.folders.isEmpty ? "Tasks" : "No folder")
+                            ForEach(loose) { row($0) }
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 190)
+            Divider().opacity(0.4)
+            menuButton("\u{FF0B}  New task", kbd: "\u{2318}N") { create(title: "New task", folder: store.selectedTask?.folder ?? "") }
+            if addingFolder {
+                TextField("Folder name, then Return", text: $folderName)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12.5))
+                    .padding(.horizontal, 8).padding(.vertical, 6)
+                    .background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(0.12)))
+                    .onSubmit {
+                        let n = folderName.trimmingCharacters(in: .whitespaces)
+                        if !n.isEmpty, !settings.folders.contains(n) { settings.folders.append(n); Toaster.shared.show("Folder \u{201C}\(n)\u{201D} created") }
+                        folderName = ""; addingFolder = false
+                    }
+            } else {
+                menuButton("\u{25A2}  New folder\u{2026}") { addingFolder = true }
+            }
+        }
+        .padding(6)
+        .frame(width: 250)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(white: 0.15).opacity(0.98)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.white.opacity(0.16), lineWidth: 0.8))
+        .shadow(color: .black.opacity(0.5), radius: 14, y: 8)
+        .onAppear { DispatchQueue.main.async { searchFocused = true } }
+    }
+
+    private func create(title: String, folder: String) {
+        let t = store.createTask(title: title.trimmingCharacters(in: .whitespaces))
+        store.setFolder(t.id, folder)
+        isPresented = false
+    }
+
+    private func header(_ t: String, plus: (() -> Void)? = nil) -> some View {
+        HStack {
+            Text(t.uppercased()).font(.system(size: 10.5, weight: .medium)).tracking(0.6).opacity(0.6)
+            Spacer()
+            if let plus {
+                Button(action: plus) { Image(systemName: "plus").font(.system(size: 10)) }
+                    .buttonStyle(.plain).opacity(0.8).help("New task in \(t)")
+            }
+        }
+        .padding(.horizontal, 8).padding(.top, 7).padding(.bottom, 2)
+    }
+
+    private func note(_ t: String) -> some View {
+        Text(t).font(.system(size: 11)).opacity(0.6).padding(.horizontal, 8).padding(.vertical, 3)
+    }
+
+    private func menuButton(_ t: String, kbd: String? = nil, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack { Text(t).font(.system(size: 12.5)); Spacer(); if let kbd { Text(kbd).font(.system(size: 11)).opacity(0.55) } }
+                .padding(.horizontal, 8).padding(.vertical, 5).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func row(_ t: NoteTask) -> some View {
+        HStack(spacing: 4) {
+            Button {
+                store.selectedID = t.id
+                isPresented = false
+            } label: {
+                HStack {
+                    Text(t.title.isEmpty ? "Untitled" : t.title).font(.system(size: 12.5)).lineLimit(1)
+                    Spacer()
+                    if t.uncheckedCount > 0 { Text("\(t.uncheckedCount)").font(.system(size: 11).monospacedDigit()).opacity(0.55) }
+                }
+                .padding(.horizontal, 8).padding(.vertical, 5).contentShape(Rectangle())
+                .background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(t.id == store.selectedID ? 0.2 : 0)))
+            }
+            .buttonStyle(.plain)
+            Button {
+                let idx = store.index(of: t.id)
+                store.deleteTask(t.id)
+                Toaster.shared.show("Deleted \u{201C}\(t.title)\u{201D}") { store.restoreTask(t, at: idx) }
+            } label: { Image(systemName: "trash").font(.system(size: 11)).opacity(0.6) }
+            .buttonStyle(.plain)
+            .help("Delete \u{201C}\(t.title)\u{201D}")
+        }
     }
 }
 

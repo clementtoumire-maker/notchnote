@@ -20,6 +20,7 @@ final class AppSettings: ObservableObject {
     @Published var usageDataEnabled: Bool { didSet { d.set(usageDataEnabled, forKey: "usageDataEnabled") } }
     @Published var dailyLimitHours: Int { didSet { d.set(dailyLimitHours, forKey: "dailyLimitHours") } }
     @Published var focusMinutes: Int { didSet { d.set(focusMinutes, forKey: "focusMinutes") } }
+    @Published var folders: [String] { didSet { d.set(folders, forKey: "folders") } }
     @Published var hasOnboarded: Bool { didSet { d.set(hasOnboarded, forKey: "hasOnboarded") } }
     @Published var lastSelectedTaskID: String? { didSet { d.set(lastSelectedTaskID, forKey: "lastSelectedTaskID") } }
 
@@ -38,6 +39,7 @@ final class AppSettings: ObservableObject {
         usageDataEnabled = d.object(forKey: "usageDataEnabled") as? Bool ?? false
         dailyLimitHours = d.object(forKey: "dailyLimitHours") as? Int ?? 4
         focusMinutes = d.object(forKey: "focusMinutes") as? Int ?? 25
+        folders = d.stringArray(forKey: "folders") ?? []
         hasOnboarded = d.object(forKey: "hasOnboarded") as? Bool ?? false
         lastSelectedTaskID = d.string(forKey: "lastSelectedTaskID")
     }

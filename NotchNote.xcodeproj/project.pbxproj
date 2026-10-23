@@ -21,6 +21,7 @@
 		5CF63356A228FD18EBD33D9C /* NotchGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 096A087BEBCCCFB76670F924 /* NotchGeometry.swift */; };
 		CD8E6EE372D329DD2FB095B0 /* NotchPanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDF1816293F37A6F66FAD9A /* NotchPanels.swift */; };
 		2342DE0936A07E50B49FAEFA /* NotchViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B471419638DB86FC41A2CA /* NotchViews.swift */; };
+		0992E3C0C17877B663BFD02F /* Toaster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD334A9EB39B552A39C6E7F /* Toaster.swift */; };
 		4FF3DA587989195D042CDECD /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A073E72D89B163142963CC97 /* OnboardingView.swift */; };
 		F7238CE4A2ED2F411CDDDC0E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857AE5B56C1423118C9567B8 /* SettingsView.swift */; };
 		E5A1457C3B4433A6B6D6B583 /* AddTaskIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 472F0E46ABBFAC6712A4608E /* AddTaskIntent.swift */; };
@@ -48,6 +49,7 @@
 		096A087BEBCCCFB76670F924 /* NotchGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchGeometry.swift; sourceTree = "<group>"; };
 		2EDF1816293F37A6F66FAD9A /* NotchPanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchPanels.swift; sourceTree = "<group>"; };
 		D1B471419638DB86FC41A2CA /* NotchViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchViews.swift; sourceTree = "<group>"; };
+		5FD334A9EB39B552A39C6E7F /* Toaster.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Toaster.swift; sourceTree = "<group>"; };
 		A073E72D89B163142963CC97 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		857AE5B56C1423118C9567B8 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		472F0E46ABBFAC6712A4608E /* AddTaskIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTaskIntent.swift; sourceTree = "<group>"; };
@@ -141,6 +143,7 @@
 				096A087BEBCCCFB76670F924 /* NotchGeometry.swift */,
 				2EDF1816293F37A6F66FAD9A /* NotchPanels.swift */,
 				D1B471419638DB86FC41A2CA /* NotchViews.swift */,
+				5FD334A9EB39B552A39C6E7F /* Toaster.swift */,
 			);
 			path = Notch;
 			sourceTree = "<group>";
@@ -266,6 +269,7 @@
 				5CF63356A228FD18EBD33D9C /* NotchGeometry.swift in Sources */,
 				CD8E6EE372D329DD2FB095B0 /* NotchPanels.swift in Sources */,
 				2342DE0936A07E50B49FAEFA /* NotchViews.swift in Sources */,
+				0992E3C0C17877B663BFD02F /* Toaster.swift in Sources */,
 				4FF3DA587989195D042CDECD /* OnboardingView.swift in Sources */,
 				F7238CE4A2ED2F411CDDDC0E /* SettingsView.swift in Sources */,
 				E5A1457C3B4433A6B6D6B583 /* AddTaskIntent.swift in Sources */,

@@ -211,6 +211,41 @@ final class TaskStore: ObservableObject {
         writeOrder()
     }
 
+    /// Puts a deleted task back (used by Undo).
+    func restoreTask(_ t: NoteTask, at index: Int) {
+        guard !tasks.contains(where: { $0.id == t.id }) else { return }
+        tasks.insert(t, at: min(max(index, 0), tasks.count))
+        selectedID = t.id
+        markDirty(t.id)
+        writeOrder()
+    }
+
+    func index(of id: UUID) -> Int { tasks.firstIndex(where: { $0.id == id }) ?? 0 }
+
+    @discardableResult
+    func duplicate(_ id: UUID) -> NoteTask? {
+        guard let src = task(id) else { return nil }
+        let copy = createTask(title: src.title + " copy", body: src.body, select: true)
+        update(copy.id) { $0.folder = src.folder }
+        return copy
+    }
+
+    /// Removes finished items from one note; returns how many were removed (the old body is kept by the caller for Undo).
+    func clearDone(_ id: UUID) -> Int {
+        guard let t = task(id) else { return 0 }
+        var removed = 0
+        let kept = t.body.components(separatedBy: "\n").filter { line in
+            let r = line.drop(while: { $0 == " " || $0 == "\t" })
+            let done = r.hasPrefix("- [x]") || r.hasPrefix("- [X]")
+            if done { removed += 1 }
+            return !done
+        }
+        if removed > 0 { setBody(id, kept.joined(separator: "\n")) }
+        return removed
+    }
+
+    func setFolder(_ id: UUID, _ folder: String) { update(id) { $0.folder = folder } }
+
     func toggleFavorite(_ id: UUID) {
         let nextOrder = (tasks.filter { $0.isFavorite }.map { $0.favoriteOrder }.max() ?? -1) + 1
         update(id) {

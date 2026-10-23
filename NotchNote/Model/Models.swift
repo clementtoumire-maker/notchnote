@@ -15,12 +15,13 @@ struct NoteTask: Identifiable, Codable, Equatable {
     var isFavorite: Bool = false
     var favoriteOrder: Int = 0
     var remindersEnabled: Bool = true
+    var folder: String = ""
 
     /// Where the file lives. Derived from the folder it was loaded from, never written into the file.
     var location: StorageLocation = .local
 
     enum CodingKeys: String, CodingKey {
-        case id, title, body, createdAt, updatedAt, isFavorite, favoriteOrder, remindersEnabled
+        case id, title, body, createdAt, updatedAt, isFavorite, favoriteOrder, remindersEnabled, folder
     }
 
     var uncheckedCount: Int { MarkdownCodec.checklistCounts(markdown: body).unchecked }
@@ -33,4 +34,21 @@ struct Card: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var text: String
     var createdAt: Date = Date()
+}
+
+extension NoteTask {
+    /// Tolerant decoding so notes saved by earlier versions (without newer fields) still load.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        title = try c.decodeIfPresent(String.self, forKey: .title) ?? "Untitled"
+        body = try c.decodeIfPresent(String.self, forKey: .body) ?? ""
+        createdAt = try c.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
+        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
+        isFavorite = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        favoriteOrder = try c.decodeIfPresent(Int.self, forKey: .favoriteOrder) ?? 0
+        remindersEnabled = try c.decodeIfPresent(Bool.self, forKey: .remindersEnabled) ?? true
+        folder = try c.decodeIfPresent(String.self, forKey: .folder) ?? ""
+        location = .local
+    }
 }
