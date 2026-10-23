@@ -1,5 +1,7 @@
 # NotchNote: install, pause, restart, remove
 
+**Quickest way: go to "Option A" at the bottom. No Xcode, no Terminal.**
+
 Everything below is done on your Mac. You do not need a paid Apple account. Allow about 20 minutes the first time, mostly waiting for Xcode to download.
 
 ## Part 1. One-time setup
@@ -70,14 +72,14 @@ Notes are kept by default when you uninstall, so you can reinstall later and fin
 
 Repeat Step 3. It replaces the old copy and keeps your notes.
 
-## Option B. No build on your Mac at all
+## Option A (easiest). Download the finished app
 
-A finished `NotchNote.app` can only be produced on a Mac. If you do not want to install any build tool, let GitHub build it once for free:
+The app is built for you on GitHub's Mac servers every time the project changes.
 
-1. Create a free account at github.com and a new **private** repository.
-2. Upload the contents of the NotchNote-project folder (the **Add file, Upload files** button; include the hidden `.github` folder, or drag the whole folder in).
-3. Open the **Actions** tab, choose **Build NotchNote**, click **Run workflow**. After a few minutes click the finished run and download **NotchNote-app**.
-4. Unzip it, drag **NotchNote.app** into **Applications**.
-5. First open: right-click the app, choose **Open**, then **Open** again. If macOS still refuses, run `xattr -cr /Applications/NotchNote.app` in Terminal.
+1. Open `https://github.com/clementtoumire-maker/notchnote/releases` (signed in; the repository is private).
+2. Under the newest release, click **NotchNote-app.zip** to download it.
+3. Double-click the zip to unzip it. Drag **NotchNote.app** into **Applications**.
+4. First open only: right-click the app, choose **Open**, then **Open** again. If macOS still refuses, open Terminal and run `xattr -cr /Applications/NotchNote.app`, then open it again.
+5. It then runs in the background and starts at login (see Part 4 to quit, pause or remove it).
 
-This also runs the self-tests and a real compile on Apple's tools, so a failed run shows any build error. Send me the log if that happens.
+Nothing else needs to be installed. The sections below (Options B and C) are only for building it yourself.
