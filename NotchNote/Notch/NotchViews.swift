@@ -50,7 +50,7 @@ struct NotchBackground: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        if hasNotch || reduceTransparency {
+        if hasNotch || reduceTransparency || AppSettings.shared.externalStyle == .black {
             Color.black
         } else {
             GlassSurface()

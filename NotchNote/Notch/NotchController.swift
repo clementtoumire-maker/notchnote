@@ -49,6 +49,11 @@ final class NotchController: NSObject {
             MainActor.assumeIsolated { self?.handleOutsideClick() }
         }
 
+        // A different style for displays without a notch needs the panels rebuilt.
+        settings.$externalStyleRaw.dropFirst().removeDuplicates().sink { [weak self] _ in
+            DispatchQueue.main.async { MainActor.assumeIsolated { self?.rebuild() } }
+        }.store(in: &cancellables)
+
         // Re-layout when size / notch settings change (debounced to the next run-loop turn).
         settings.objectWillChange.sink { [weak self] _ in
             DispatchQueue.main.async { MainActor.assumeIsolated { self?.relayoutSoon() } }

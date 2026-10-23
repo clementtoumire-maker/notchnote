@@ -62,6 +62,10 @@ struct SettingsView: View {
             }
 
             Section("Appearance") {
+                Picker("Display without a notch", selection: $settings.externalStyleRaw) {
+                    ForEach(ExternalStyle.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                Toggle("Move checked items to the bottom of the list", isOn: $settings.sortCheckedToBottom)
                 ColorPicker("Text color", selection: Binding(
                     get: { settings.textColor },
                     set: { settings.textColorHex = NSColor($0).hexString }))

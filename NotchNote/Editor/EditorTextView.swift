@@ -213,7 +213,9 @@ final class EditorTextView: NSTextView {
         let toggled = MarkdownCodec.togglingCheck(block[k])
         let nowChecked = MarkdownCodec.parse(toggled).marker == .checked
         block.remove(at: k)
-        if nowChecked {
+        if !AppSettings.shared.sortCheckedToBottom {
+            block.insert(toggled, at: k)
+        } else if nowChecked {
             block.append(toggled)
         } else {
             let firstChecked = block.firstIndex { MarkdownCodec.parse($0).marker == .checked } ?? block.count

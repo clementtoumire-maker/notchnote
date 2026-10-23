@@ -2,6 +2,19 @@ import AppKit
 import SwiftUI
 import ServiceManagement
 
+/// How the panel looks on a display without a notch.
+enum ExternalStyle: String, CaseIterable, Identifiable {
+    case glass, black, virtualNotch
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .glass: return "Glass pill"
+        case .black: return "Black pill"
+        case .virtualNotch: return "Virtual notch"
+        }
+    }
+}
+
 @MainActor
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
@@ -21,6 +34,8 @@ final class AppSettings: ObservableObject {
     @Published var dailyLimitHours: Int { didSet { d.set(dailyLimitHours, forKey: "dailyLimitHours") } }
     @Published var focusMinutes: Int { didSet { d.set(focusMinutes, forKey: "focusMinutes") } }
     @Published var folders: [String] { didSet { d.set(folders, forKey: "folders") } }
+    @Published var externalStyleRaw: String { didSet { d.set(externalStyleRaw, forKey: "externalStyle") } }
+    @Published var sortCheckedToBottom: Bool { didSet { d.set(sortCheckedToBottom, forKey: "sortCheckedToBottom") } }
     @Published var hasOnboarded: Bool { didSet { d.set(hasOnboarded, forKey: "hasOnboarded") } }
     @Published var lastSelectedTaskID: String? { didSet { d.set(lastSelectedTaskID, forKey: "lastSelectedTaskID") } }
 
@@ -40,6 +55,8 @@ final class AppSettings: ObservableObject {
         dailyLimitHours = d.object(forKey: "dailyLimitHours") as? Int ?? 4
         focusMinutes = d.object(forKey: "focusMinutes") as? Int ?? 25
         folders = d.stringArray(forKey: "folders") ?? []
+        externalStyleRaw = d.string(forKey: "externalStyle") ?? ExternalStyle.glass.rawValue
+        sortCheckedToBottom = d.object(forKey: "sortCheckedToBottom") as? Bool ?? true
         hasOnboarded = d.object(forKey: "hasOnboarded") as? Bool ?? false
         lastSelectedTaskID = d.string(forKey: "lastSelectedTaskID")
     }
@@ -51,6 +68,8 @@ final class AppSettings: ObservableObject {
         panelWidth = 440
         panelHeight = 320
     }
+
+    var externalStyle: ExternalStyle { ExternalStyle(rawValue: externalStyleRaw) ?? .glass }
 
     // MARK: Launch at login
 

@@ -19,6 +19,8 @@ struct NotchGeometry: Equatable {
     let screenFrame: NSRect
     let hasNotch: Bool
     let hardwareNotch: CGSize
+    /// A notchless display drawn with a black notch-shaped tab (setting Virtual notch).
+    let isVirtual: Bool
 
     /// Corner radius of the hardware notch's lower corners. The folded shape uses it so it is indistinguishable from the real notch.
     static let hardwareCornerRadius: CGFloat = 9
@@ -29,17 +31,22 @@ struct NotchGeometry: Equatable {
     static let hotZoneMarginX: CGFloat = 10
     static let hotZoneMarginBottom: CGFloat = 6
 
+    @MainActor
     init(screen: NSScreen) {
         displayID = screen.displayID
         screenFrame = screen.frame
         let topInset = screen.safeAreaInsets.top
-        hasNotch = topInset > 0
-        if hasNotch {
+        let virtual = topInset == 0 && AppSettings.shared.externalStyle == .virtualNotch
+        isVirtual = virtual
+        hasNotch = topInset > 0 || virtual
+        if topInset > 0 {
             var width: CGFloat = 200
             if let l = screen.auxiliaryTopLeftArea, let r = screen.auxiliaryTopRightArea {
                 width = screen.frame.width - l.width - r.width
             }
             hardwareNotch = CGSize(width: width, height: topInset)
+        } else if virtual {
+            hardwareNotch = CGSize(width: 188, height: 32)
         } else {
             hardwareNotch = .zero
         }
