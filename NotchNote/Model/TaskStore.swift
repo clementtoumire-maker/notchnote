@@ -307,6 +307,7 @@ final class TaskStore: ObservableObject {
         }
         dirty.removeAll()
         SpotlightIndexer.shared.indexSoon(changed)
+        ReminderService.shared.syncChipReminders(tasks)
     }
 
     /// Used on quit: flush and wait until the IO queue is drained.

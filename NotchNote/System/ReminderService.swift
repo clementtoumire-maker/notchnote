@@ -22,6 +22,13 @@ final class ReminderService: NSObject, UNUserNotificationCenterDelegate {
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        let actions = [
+            UNNotificationAction(identifier: "snooze15", title: "Snooze 15 min", options: []),
+            UNNotificationAction(identifier: "snooze60", title: "Snooze 1 hour", options: []),
+            UNNotificationAction(identifier: "tomorrow", title: "Tomorrow", options: []),
+            UNNotificationAction(identifier: "done", title: "Done", options: [])
+        ]
+        center.setNotificationCategories([UNNotificationCategory(identifier: "reminder", actions: actions, intentIdentifiers: [], options: [])])
 
         let ws = NSWorkspace.shared.notificationCenter
         observe(ws, NSWorkspace.willSleepNotification, pause: "sleep")
@@ -83,6 +90,7 @@ final class ReminderService: NSObject, UNUserNotificationCenterDelegate {
             if let first = MarkdownCodec.firstUncheckedText(markdown: task.body) { body += " \u{2013} \(first)" }
             content.body = body
             content.sound = .default
+            content.categoryIdentifier = "reminder"
             content.userInfo = ["taskID": task.id.uuidString]
             let req = UNNotificationRequest(identifier: "reminder-\(task.id.uuidString)", content: content, trigger: nil)
             center.add(req)
@@ -103,12 +111,81 @@ final class ReminderService: NSObject, UNUserNotificationCenterDelegate {
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter,
                                             didReceive response: UNNotificationResponse,
                                             withCompletionHandler completionHandler: @escaping () -> Void) {
-        let idString = response.notification.request.content.userInfo["taskID"] as? String
+        let content = response.notification.request.content
+        let idString = content.userInfo["taskID"] as? String
+        let action = response.actionIdentifier
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
-                if let s = idString, let id = UUID(uuidString: s) { NotchController.shared.openTask(id) }
+                guard let s = idString, let id = UUID(uuidString: s) else { return }
+                switch action {
+                case "snooze15": ReminderService.shared.snooze(id: id, title: content.title, body: content.body, seconds: 15 * 60)
+                case "snooze60": ReminderService.shared.snooze(id: id, title: content.title, body: content.body, seconds: 60 * 60)
+                case "tomorrow":
+                    let cal = Calendar.current
+                    let tomorrow9 = cal.date(bySettingHour: 9, minute: 0, second: 0, of: cal.date(byAdding: .day, value: 1, to: Date()) ?? Date()) ?? Date()
+                    ReminderService.shared.snooze(id: id, title: content.title, body: content.body, seconds: max(60, tomorrow9.timeIntervalSinceNow))
+                case "done": ReminderService.shared.markFirstUncheckedDone(id)
+                default: NotchController.shared.openTask(id)
+                }
             }
         }
         completionHandler()
+    }
+
+    /// Show the same reminder again later.
+    func snooze(id: UUID, title: String, body: String, seconds: TimeInterval) {
+        let c = UNMutableNotificationContent()
+        c.title = title
+        c.body = body
+        c.sound = .default
+        c.categoryIdentifier = "reminder"
+        c.userInfo = ["taskID": id.uuidString]
+        let req = UNNotificationRequest(identifier: "snooze-\(id.uuidString)", content: c,
+                                        trigger: UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false))
+        UNUserNotificationCenter.current().add(req)
+    }
+
+    func markFirstUncheckedDone(_ id: UUID) {
+        TaskStore.shared.update(id) { t in
+            var lines = t.body.components(separatedBy: "\n")
+            if let i = lines.firstIndex(where: { $0.drop(while: { $0 == " " || $0 == "\t" }).hasPrefix("- [ ]") }) {
+                lines[i] = lines[i].replacingOccurrences(of: "- [ ]", with: "- [x]")
+                t.body = lines.joined(separator: "\n")
+            }
+        }
+    }
+
+    // MARK: Reminder chips
+
+    /// Schedules a notification for every reminder chip (`[[rem:yyyy-MM-dd'T'HH:mm]]`) that is still in the future
+    /// on an unchecked item. Called after notes are saved; replaces what it scheduled before.
+    func syncChipReminders(_ tasks: [NoteTask]) {
+        guard started else { return }
+        let center = UNUserNotificationCenter.current()
+        center.getPendingNotificationRequests { pending in
+            let old = pending.map { $0.identifier }.filter { $0.hasPrefix("chip-") }
+            center.removePendingNotificationRequests(withIdentifiers: old)
+            for t in tasks {
+                for (i, line) in t.body.components(separatedBy: "\n").enumerated() {
+                    let r = line.drop(while: { $0 == " " || $0 == "\t" })
+                    guard r.hasPrefix("- [ ]") else { continue }
+                    let ns = line as NSString
+                    for m in ChipToken.regex.matches(in: line, range: NSRange(location: 0, length: ns.length)) {
+                        guard ns.substring(with: m.range(at: 1)) == "rem",
+                              let when = ChipToken.isoFormat.date(from: ns.substring(with: m.range(at: 2))),
+                              when > Date() else { continue }
+                        let c = UNMutableNotificationContent()
+                        c.title = t.title
+                        c.body = MarkdownCodec.stripInline(String(r.dropFirst(5)))
+                        c.sound = .default
+                        c.categoryIdentifier = "reminder"
+                        c.userInfo = ["taskID": t.id.uuidString]
+                        let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: when)
+                        center.add(UNNotificationRequest(identifier: "chip-\(t.id.uuidString)-\(i)", content: c,
+                                                         trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))
+                    }
+                }
+            }
+        }
     }
 }
