@@ -15,7 +15,16 @@ jobs:
       - name: Self-tests
         run: ./scripts/selftest.sh
       - name: Build
-        run: CONFIG=Release ./scripts/build.sh
+        run: |
+          set -o pipefail
+          CONFIG=Release ./scripts/build.sh 2>&1 | tee build.log
+      - name: Report compiler errors
+        if: failure()
+        run: |
+          grep -E "error:|warning: unable|fatal" build.log | sort -u | head -40 | while IFS= read -r l; do
+            echo "::error::$(echo "$l" | sed 's#/Users/runner/work/[^/]*/[^/]*/##' | cut -c1-400)"
+          done
+          tail -25 build.log | while IFS= read -r l; do echo "::warning::$(echo "$l" | cut -c1-300)"; done
       - name: Package
         run: |
           codesign --force --deep --sign - build/Build/Products/Release/NotchNote.app
