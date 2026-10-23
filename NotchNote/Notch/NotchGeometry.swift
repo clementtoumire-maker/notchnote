@@ -22,6 +22,8 @@ struct NotchGeometry: Equatable {
 
     /// Corner radius of the hardware notch's lower corners. The folded shape uses it so it is indistinguishable from the real notch.
     static let hardwareCornerRadius: CGFloat = 9
+    /// Radius of the concave ears where the folded notch meets the top edge (notch displays only).
+    static let earRadius: CGFloat = 9
     /// Gap between the top screen edge and the floating pill on notchless displays.
     static let pillTopGap: CGFloat = 5
     static let hotZoneMarginX: CGFloat = 10
@@ -60,9 +62,10 @@ struct NotchGeometry: Equatable {
 
     @MainActor func expandedFrame(_ s: AppSettings) -> NSRect {
         let size = expandedSize(s)
-        return NSRect(x: screenFrame.midX - size.width / 2,
+        let ear = hasNotch ? Self.earRadius : 0
+        return NSRect(x: screenFrame.midX - size.width / 2 - ear,
                       y: screenFrame.maxY - topGap - size.height,
-                      width: size.width, height: size.height)
+                      width: size.width + 2 * ear, height: size.height)
     }
 
     /// Slightly larger than the visible pill so the target is easy to hit.

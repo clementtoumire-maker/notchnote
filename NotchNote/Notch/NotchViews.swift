@@ -8,6 +8,9 @@ import UniformTypeIdentifiers
 struct NotchShape: Shape {
     var bottomRadius: CGFloat
     var hasNotch: Bool
+    /// Radius of the small concave "ears" where the notch meets the top edge. The rect handed to `path`
+    /// includes `ear` of extra width on each side; the body is inset by it.
+    var ear: CGFloat = 0
 
     var animatableData: CGFloat {
         get { bottomRadius }
@@ -18,16 +21,23 @@ struct NotchShape: Shape {
         if !hasNotch {
             return RoundedRectangle(cornerRadius: min(bottomRadius, rect.height / 2), style: .continuous).path(in: rect)
         }
-        let r = max(0, min(bottomRadius, rect.width / 2, rect.height))
+        let e = ear
+        let b = rect.insetBy(dx: e, dy: 0)
+        let r = max(0, min(bottomRadius, b.width / 2, b.height))
         var p = Path()
         p.move(to: CGPoint(x: rect.minX, y: rect.minY))
         p.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        p.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - r))
-        p.addArc(tangent1End: CGPoint(x: rect.maxX, y: rect.maxY),
-                 tangent2End: CGPoint(x: rect.maxX - r, y: rect.maxY), radius: r)
-        p.addLine(to: CGPoint(x: rect.minX + r, y: rect.maxY))
-        p.addArc(tangent1End: CGPoint(x: rect.minX, y: rect.maxY),
-                 tangent2End: CGPoint(x: rect.minX, y: rect.maxY - r), radius: r)
+        if e > 0 { p.addQuadCurve(to: CGPoint(x: b.maxX, y: rect.minY + e), control: CGPoint(x: b.maxX, y: rect.minY)) }
+        p.addLine(to: CGPoint(x: b.maxX, y: b.maxY - r))
+        p.addArc(tangent1End: CGPoint(x: b.maxX, y: b.maxY),
+                 tangent2End: CGPoint(x: b.maxX - r, y: b.maxY), radius: r)
+        p.addLine(to: CGPoint(x: b.minX + r, y: b.maxY))
+        p.addArc(tangent1End: CGPoint(x: b.minX, y: b.maxY),
+                 tangent2End: CGPoint(x: b.minX, y: b.maxY - r), radius: r)
+        if e > 0 {
+            p.addLine(to: CGPoint(x: b.minX, y: rect.minY + e))
+            p.addQuadCurve(to: CGPoint(x: rect.minX, y: rect.minY), control: CGPoint(x: b.minX, y: rect.minY))
+        }
         p.closeSubpath()
         return p
     }
@@ -96,11 +106,12 @@ struct CollapsedPillView: View {
 
     var body: some View {
         let size = state.geometry.collapsedSize(settings)
-        let shape = NotchShape(bottomRadius: NotchGeometry.hardwareCornerRadius, hasNotch: state.geometry.hasNotch)
+        let ear = state.geometry.hasNotch ? NotchGeometry.earRadius : 0
+        let shape = NotchShape(bottomRadius: NotchGeometry.hardwareCornerRadius, hasNotch: state.geometry.hasNotch, ear: ear)
         let unchecked = store.tasks.reduce(0) { $0 + $1.uncheckedCount }
         ZStack(alignment: .top) {
             NotchBackground(hasNotch: state.geometry.hasNotch)
-                .frame(width: size.width, height: size.height)
+                .frame(width: size.width + 2 * ear, height: size.height)
                 .clipShape(shape)
                 .modifier(GlassEdge(hasNotch: state.geometry.hasNotch, shape: shape))
                 .overlay {
@@ -140,7 +151,8 @@ struct NotchPanelView: View {
         let full = geo.expandedSize(settings)
         let collapsed = geo.collapsedSize(settings)
         let size = state.isOpen ? full : collapsed
-        let shape = NotchShape(bottomRadius: state.isOpen ? 26 : (geo.hasNotch ? NotchGeometry.hardwareCornerRadius : 15), hasNotch: geo.hasNotch)
+        let ear = geo.hasNotch ? NotchGeometry.earRadius : 0
+        let shape = NotchShape(bottomRadius: state.isOpen ? 26 : (geo.hasNotch ? NotchGeometry.hardwareCornerRadius : 15), hasNotch: geo.hasNotch, ear: ear)
         let openAnim: Animation = reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.42, dampingFraction: 0.70)
         let closeAnim: Animation = reduceMotion ? .easeOut(duration: 0.12) : .spring(response: 0.34, dampingFraction: 0.88)
 
@@ -152,12 +164,12 @@ struct NotchPanelView: View {
                     .opacity(state.isOpen ? 1 : 0)
                     .allowsHitTesting(state.isOpen)
             }
-            .frame(width: size.width, height: size.height, alignment: .top)
+            .frame(width: size.width + 2 * ear, height: size.height, alignment: .top)
             .clipShape(shape)
             .modifier(GlassEdge(hasNotch: geo.hasNotch, shape: shape))
-            .overlay(dropOverlay(shape: shape, size: size))
+            .overlay(dropOverlay(shape: shape, size: CGSize(width: size.width + 2 * ear, height: size.height)))
         }
-        .frame(width: full.width, height: full.height, alignment: .top)
+        .frame(width: full.width + 2 * ear, height: full.height, alignment: .top)
         .animation(state.isOpen ? openAnim : closeAnim, value: state.isOpen)
         .foregroundStyle(settings.textColor)
         .tint(settings.textColor)
