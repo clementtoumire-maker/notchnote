@@ -45,20 +45,20 @@ struct NotchGeometry: Equatable {
 
     var topGap: CGFloat { hasNotch ? 0 : Self.pillTopGap }
 
-    func collapsedSize(_ s: AppSettings) -> CGSize {
+    @MainActor func collapsedSize(_ s: AppSettings) -> CGSize {
         if hasNotch {
             return CGSize(width: hardwareNotch.width + s.notchExtraWidth, height: hardwareNotch.height + s.notchExtraHeight)
         }
         return CGSize(width: 150 + s.notchExtraWidth, height: 30 + s.notchExtraHeight)
     }
 
-    func expandedSize(_ s: AppSettings) -> CGSize {
+    @MainActor func expandedSize(_ s: AppSettings) -> CGSize {
         let w = min(max(s.panelWidth, AppSettings.panelWidthRange.lowerBound), min(AppSettings.panelWidthRange.upperBound, screenFrame.width - 40))
         let h = min(max(s.panelHeight, AppSettings.panelHeightRange.lowerBound), min(AppSettings.panelHeightRange.upperBound, screenFrame.height - 80))
         return CGSize(width: w, height: h)
     }
 
-    func expandedFrame(_ s: AppSettings) -> NSRect {
+    @MainActor func expandedFrame(_ s: AppSettings) -> NSRect {
         let size = expandedSize(s)
         return NSRect(x: screenFrame.midX - size.width / 2,
                       y: screenFrame.maxY - topGap - size.height,
@@ -66,7 +66,7 @@ struct NotchGeometry: Equatable {
     }
 
     /// Slightly larger than the visible pill so the target is easy to hit.
-    func hotFrame(_ s: AppSettings) -> NSRect {
+    @MainActor func hotFrame(_ s: AppSettings) -> NSRect {
         let c = collapsedSize(s)
         let w = c.width + Self.hotZoneMarginX * 2
         let h = c.height + Self.hotZoneMarginBottom

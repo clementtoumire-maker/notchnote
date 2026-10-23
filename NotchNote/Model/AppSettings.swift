@@ -21,8 +21,8 @@ final class AppSettings: ObservableObject {
     @Published var hasOnboarded: Bool { didSet { d.set(hasOnboarded, forKey: "hasOnboarded") } }
     @Published var lastSelectedTaskID: String? { didSet { d.set(lastSelectedTaskID, forKey: "lastSelectedTaskID") } }
 
-    static let panelWidthRange: ClosedRange<Double> = 320...900
-    static let panelHeightRange: ClosedRange<Double> = 200...800
+    nonisolated static let panelWidthRange: ClosedRange<Double> = 320...900
+    nonisolated static let panelHeightRange: ClosedRange<Double> = 200...800
 
     private init() {
         let d = UserDefaults.standard
