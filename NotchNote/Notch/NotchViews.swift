@@ -221,12 +221,19 @@ struct NotchPanelView: View {
                     .help("Click to rename")
             }
 
+            if let t = store.selectedTask, t.checkedCount + t.uncheckedCount > 0 {
+                Text("\(t.checkedCount)/\(t.checkedCount + t.uncheckedCount)")
+                    .font(.system(size: 10.5).monospacedDigit())
+                    .padding(.horizontal, 7).padding(.vertical, 1)
+                    .background(Capsule().fill(t.uncheckedCount == 0 ? Color.green.opacity(0.28) : Color.white.opacity(0.12)))
+            }
+
             Spacer(minLength: 4)
 
             Picker("", selection: $state.tab) {
                 Text("Notes").tag(PanelTab.notes)
-                Text("Cards").tag(PanelTab.cards)
                 Text("Today").tag(PanelTab.today)
+                Text("Cards").tag(PanelTab.cards)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
@@ -256,10 +263,13 @@ struct NotchPanelView: View {
 
     @ViewBuilder private var notesPane: some View {
         if let t = store.selectedTask {
-            MarkdownEditor(documentID: t.id,
-                           markdown: bodyBinding,
-                           textColor: settings.nsTextColor,
-                           onActivate: { NotchController.shared.activate(geo.displayID) })
+            VStack(spacing: 6) {
+                MarkdownEditor(documentID: t.id,
+                               markdown: bodyBinding,
+                               textColor: settings.nsTextColor,
+                               onActivate: { NotchController.shared.activate(geo.displayID) })
+                EditorToolbar(displayID: geo.displayID)
+            }
         } else {
             Text("No task").opacity(0.5)
         }

@@ -77,7 +77,7 @@ struct MarkdownEditor: NSViewRepresentable {
 
         func textDidChange(_ notification: Notification) {
             guard let tv = notification.object as? EditorTextView, !tv.hasMarkedText() else { return }
-            let md = MarkdownCodec.toMarkdown(tv.string)
+            let md = tv.markdownText()
             guard md != lastMarkdown else { return }
             lastMarkdown = md
             parent.markdown = md

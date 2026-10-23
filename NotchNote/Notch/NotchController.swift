@@ -217,6 +217,11 @@ final class NotchController: NSObject {
         if !NSMouseInRect(NSEvent.mouseLocation, slot.main.frame, false) { collapse(id, force: true) }
     }
 
+    /// The editor shown in this display's panel (used by the formatting bar).
+    func editor(for id: CGDirectDisplayID) -> EditorTextView? {
+        slots[id]?.main.contentView?.findEditor()
+    }
+
     // MARK: Entry points used elsewhere
 
     /// Open the panel on the display under the mouse, pinned, with the editor focused.

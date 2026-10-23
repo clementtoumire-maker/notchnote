@@ -9,12 +9,14 @@
 /* Begin PBXBuildFile section */
 		19972FB981FAEB695D616F79 /* NotchNoteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7F376EED020E901971E121 /* NotchNoteApp.swift */; };
 		B92E4BEEE303A8FF3A526B13 /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5429455F941F7F742DBDA56 /* WindowManager.swift */; };
+		1639592DC3F50D673160F06F /* Chips.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B5EA875FC5B159B31674E24 /* Chips.swift */; };
 		952835ACCD3A74F202599E85 /* EditorTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0499EB6F2FA110B0E57BE39 /* EditorTextView.swift */; };
 		FC74F8DA87E98FC8795132B3 /* MarkdownEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43A1093060CCC22C706E02ED /* MarkdownEditor.swift */; };
 		AB343117A8A005AFE79CC147 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E093E08D48573C83C76F829 /* AppSettings.swift */; };
 		A3B3F36A002F101D6A18CDE4 /* MarkdownCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C5754514B5B04388A611CD2 /* MarkdownCodec.swift */; };
 		1FEAEE4F09A1A5C646D56A31 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD2DE357181BA6BCD0D97AD8 /* Models.swift */; };
 		3E0C651104317B9F133FCE8A /* TaskStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6322DFC9DF97E3C186811AE4 /* TaskStore.swift */; };
+		75CD31B34316166DA99E1E48 /* EditorToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D5E388B1C7EDF9FAA68670 /* EditorToolbar.swift */; };
 		941E73EAF695D7BCF252A2B5 /* NotchController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4414C06680854D3165217B69 /* NotchController.swift */; };
 		5CF63356A228FD18EBD33D9C /* NotchGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 096A087BEBCCCFB76670F924 /* NotchGeometry.swift */; };
 		CD8E6EE372D329DD2FB095B0 /* NotchPanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDF1816293F37A6F66FAD9A /* NotchPanels.swift */; };
@@ -32,12 +34,14 @@
 		F5BF48AA40CAD7891EB709FC /* NotchNote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NotchNote.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DB7F376EED020E901971E121 /* NotchNoteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchNoteApp.swift; sourceTree = "<group>"; };
 		C5429455F941F7F742DBDA56 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
+		3B5EA875FC5B159B31674E24 /* Chips.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Chips.swift; sourceTree = "<group>"; };
 		B0499EB6F2FA110B0E57BE39 /* EditorTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextView.swift; sourceTree = "<group>"; };
 		43A1093060CCC22C706E02ED /* MarkdownEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownEditor.swift; sourceTree = "<group>"; };
 		2E093E08D48573C83C76F829 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		3C5754514B5B04388A611CD2 /* MarkdownCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownCodec.swift; sourceTree = "<group>"; };
 		FD2DE357181BA6BCD0D97AD8 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		6322DFC9DF97E3C186811AE4 /* TaskStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskStore.swift; sourceTree = "<group>"; };
+		83D5E388B1C7EDF9FAA68670 /* EditorToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorToolbar.swift; sourceTree = "<group>"; };
 		4414C06680854D3165217B69 /* NotchController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchController.swift; sourceTree = "<group>"; };
 		096A087BEBCCCFB76670F924 /* NotchGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchGeometry.swift; sourceTree = "<group>"; };
 		2EDF1816293F37A6F66FAD9A /* NotchPanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchPanels.swift; sourceTree = "<group>"; };
@@ -107,6 +111,7 @@
 		FEE45AFD760DEA2D144A1D05 /* Editor */ = {
 			isa = PBXGroup;
 			children = (
+				3B5EA875FC5B159B31674E24 /* Chips.swift */,
 				B0499EB6F2FA110B0E57BE39 /* EditorTextView.swift */,
 				43A1093060CCC22C706E02ED /* MarkdownEditor.swift */,
 			);
@@ -127,6 +132,7 @@
 		A724FCB1ABAF142A8709E111 /* Notch */ = {
 			isa = PBXGroup;
 			children = (
+				83D5E388B1C7EDF9FAA68670 /* EditorToolbar.swift */,
 				4414C06680854D3165217B69 /* NotchController.swift */,
 				096A087BEBCCCFB76670F924 /* NotchGeometry.swift */,
 				2EDF1816293F37A6F66FAD9A /* NotchPanels.swift */,
@@ -242,12 +248,14 @@
 			files = (
 				19972FB981FAEB695D616F79 /* NotchNoteApp.swift in Sources */,
 				B92E4BEEE303A8FF3A526B13 /* WindowManager.swift in Sources */,
+				1639592DC3F50D673160F06F /* Chips.swift in Sources */,
 				952835ACCD3A74F202599E85 /* EditorTextView.swift in Sources */,
 				FC74F8DA87E98FC8795132B3 /* MarkdownEditor.swift in Sources */,
 				AB343117A8A005AFE79CC147 /* AppSettings.swift in Sources */,
 				A3B3F36A002F101D6A18CDE4 /* MarkdownCodec.swift in Sources */,
 				1FEAEE4F09A1A5C646D56A31 /* Models.swift in Sources */,
 				3E0C651104317B9F133FCE8A /* TaskStore.swift in Sources */,
+				75CD31B34316166DA99E1E48 /* EditorToolbar.swift in Sources */,
 				941E73EAF695D7BCF252A2B5 /* NotchController.swift in Sources */,
 				5CF63356A228FD18EBD33D9C /* NotchGeometry.swift in Sources */,
 				CD8E6EE372D329DD2FB095B0 /* NotchPanels.swift in Sources */,

@@ -5,8 +5,8 @@ import Foundation
 /// is one character that can be clicked, deleted and undone as a unit.
 enum ListMarker: String, CaseIterable {
     case bullet = "\u{2022} "      // "• "
-    case unchecked = "\u{2610} "   // "☐ "
-    case checked = "\u{2611} "     // "☑ "
+    case unchecked = "\u{25CB} "   // "○ "
+    case checked = "\u{25CF} "     // "● "
 
     var markdownPrefix: String {
         switch self {
@@ -176,7 +176,8 @@ enum MarkdownCodec {
             let rest = String(raw.drop(while: { $0 == " " || $0 == "\t" }))
             if rest.hasPrefix("- [ ]") {
                 let t = String(rest.dropFirst(5)).trimmingCharacters(in: .whitespaces)
-                if !t.isEmpty { return t }
+                let clean = stripInline(t)
+                if !clean.isEmpty { return clean }
             }
         }
         return nil
@@ -189,8 +190,16 @@ enum MarkdownCodec {
             for prefix in ["- [ ] ", "- [x] ", "- [X] ", "- ", "* ", "### ", "## ", "# "] where s.hasPrefix(prefix) {
                 s = String(s.dropFirst(prefix.count)); break
             }
-            return s
+            return stripInline(s)
         }
         return ""
+    }
+
+    /// Removes chip tokens and inline-style markers so summaries and notifications read as plain text.
+    static func stripInline(_ s: String) -> String {
+        var t = s
+        let patterns = ["\\[\\[[a-z]+:[^\\]\\n]+\\]\\]", "</?(u|book|mono|round)>", "\\*\\*", "~~", "=="]
+        for p in patterns { t = t.replacingOccurrences(of: p, with: "", options: .regularExpression) }
+        return t.trimmingCharacters(in: .whitespaces)
     }
 }
