@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Intentionally empty. App Sandbox is OFF so the app can write to the sync folder you pick
+	     without security-scoped bookmarks, and no capability needs a paid Developer Program account.
+	     To adopt CloudKit later see docs/CLOUDKIT.md. -->
+</dict>
+</plist>

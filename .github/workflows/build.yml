@@ -1,0 +1,26 @@
+name: Build NotchNote
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Self-tests
+        run: ./scripts/selftest.sh
+      - name: Build
+        run: CONFIG=Release ./scripts/build.sh
+      - name: Package
+        run: |
+          codesign --force --deep --sign - build/Build/Products/Release/NotchNote.app
+          ditto -c -k --keepParent build/Build/Products/Release/NotchNote.app NotchNote-app.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NotchNote-app
+          path: NotchNote-app.zip
