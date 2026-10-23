@@ -3,6 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: macos-15
@@ -33,3 +35,10 @@ jobs:
         with:
           name: NotchNote-app
           path: NotchNote-app.zip
+      - name: Publish a downloadable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "build-${{ github.run_number }}" NotchNote-app.zip \
+            --title "NotchNote build ${{ github.run_number }}" \
+            --notes "Unzip, drag NotchNote.app into Applications, then right-click it and choose Open the first time."
