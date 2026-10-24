@@ -144,7 +144,6 @@ struct NotchPanelView: View {
     @ObservedObject private var toaster = Toaster.shared
     @State private var editingTitle = false
     @State private var dropTargeted = false
-    @State private var resizeStart: CGSize?
     @FocusState private var titleFocused: Bool
 
     private var geo: NotchGeometry { state.geometry }
@@ -196,11 +195,10 @@ struct NotchPanelView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            footer
         }
         .padding(.top, geo.hasNotch ? geo.hardwareNotch.height + 4 : 12)
         .padding(.horizontal, 14)
-        .padding(.bottom, 8)
+        .padding(.bottom, 14)
         .overlay(alignment: .topLeading) {
             if showTasks {
                 ZStack(alignment: .topLeading) {
@@ -228,7 +226,7 @@ struct NotchPanelView: View {
                 .padding(.leading, 14).padding(.trailing, 8).padding(.vertical, 7)
                 .background(Capsule().fill(Color(white: 0.16).opacity(0.97)))
                 .overlay(Capsule().strokeBorder(Color.white.opacity(0.14), lineWidth: 0.8))
-                .padding(.bottom, 40)
+                .padding(.bottom, 64)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -256,6 +254,8 @@ struct NotchPanelView: View {
                 Text((store.selectedTask?.title).flatMap { $0.isEmpty ? nil : $0 } ?? "Untitled")
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(-1)
                     .onTapGesture {
                         editingTitle = true
                         DispatchQueue.main.async { titleFocused = true }
@@ -266,6 +266,8 @@ struct NotchPanelView: View {
             if let t = store.selectedTask, t.checkedCount + t.uncheckedCount > 0 {
                 Text("\(t.checkedCount)/\(t.checkedCount + t.uncheckedCount)")
                     .font(.system(size: 10.5).monospacedDigit())
+                    .lineLimit(1)
+                    .fixedSize()
                     .padding(.horizontal, 7).padding(.vertical, 1)
                     .background(Capsule().fill(t.uncheckedCount == 0 ? Color.green.opacity(0.28) : Color.white.opacity(0.12)))
             }
@@ -378,54 +380,6 @@ struct NotchPanelView: View {
         } else {
             Text("No task").opacity(0.5)
         }
-    }
-
-    private var footer: some View {
-        HStack(spacing: 6) {
-            if state.tab == .notes, let t = store.selectedTask, t.checkedCount > 0 {
-                Button { clearDone() } label: {
-                    Text("Clear \(t.checkedCount) done").font(.system(size: 11, weight: .medium))
-                        .padding(.horizontal, 9).padding(.vertical, 3)
-                        .background(Capsule().fill(Color.white.opacity(0.14)))
-                }
-                .buttonStyle(.plain)
-            }
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 6) {
-                    ForEach(store.favorites) { f in
-                        Button { store.selectedID = f.id; state.tab = .notes } label: {
-                            Text(f.title.isEmpty ? "Untitled" : f.title)
-                                .font(.system(size: 11, weight: .medium))
-                                .lineLimit(1)
-                                .padding(.horizontal, 8).padding(.vertical, 3)
-                                .background(Capsule().fill(Color.white.opacity(f.id == store.selectedID ? 0.22 : 0.10)))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            Spacer(minLength: 0)
-            iconButton("gearshape", help: "Settings") { WindowManager.shared.showSettings() }
-            Image(systemName: "arrow.up.left.and.arrow.down.right")
-                .font(.system(size: 10))
-                .opacity(0.5)
-                .rotationEffect(.degrees(90))
-                .frame(width: 20, height: 20)
-                .contentShape(Rectangle())
-                .help("Drag to resize")
-                .gesture(
-                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                        .onChanged { v in
-                            if resizeStart == nil { resizeStart = CGSize(width: settings.panelWidth, height: settings.panelHeight) }
-                            guard let s = resizeStart else { return }
-                            // The panel is centred on the notch, so width grows on both sides: 2x.
-                            settings.panelWidth = min(max(s.width + v.translation.width * 2, AppSettings.panelWidthRange.lowerBound), AppSettings.panelWidthRange.upperBound)
-                            settings.panelHeight = min(max(s.height + v.translation.height, AppSettings.panelHeightRange.lowerBound), AppSettings.panelHeightRange.upperBound)
-                        }
-                        .onEnded { _ in resizeStart = nil }
-                )
-        }
-        .frame(height: 22)
     }
 
     // MARK: Bindings & drop

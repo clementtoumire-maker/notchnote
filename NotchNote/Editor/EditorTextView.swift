@@ -390,6 +390,36 @@ final class EditorTextView: NSTextView {
         isProgrammaticEdit = false
     }
 
+    // MARK: Cursor (I-beam for text, pointing hand over chips and checkboxes)
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        guard let lm = layoutManager, let tc = textContainer, let storage = textStorage, storage.length > 0 else { return }
+        let origin = textContainerOrigin
+        let visible = visibleRect
+        func add(_ glyphRect: NSRect) {
+            let r = glyphRect.offsetBy(dx: origin.x, dy: origin.y).intersection(visible)
+            if !r.isEmpty { addCursorRect(r, cursor: .pointingHand) }
+        }
+        // Chips
+        storage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: storage.length)) { v, range, _ in
+            guard v is ChipAttachment else { return }
+            let g = lm.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
+            add(lm.boundingRect(forGlyphRange: g, in: tc))
+        }
+        // Checkbox circles at the start of checklist lines
+        let ns = storage.string as NSString
+        ns.enumerateSubstrings(in: NSRange(location: 0, length: ns.length), options: .byParagraphs) { sub, range, _, _ in
+            guard let line = sub, !line.isEmpty else { return }
+            let parsed = MarkdownCodec.parse(line)
+            guard parsed.marker == .unchecked || parsed.marker == .checked else { return }
+            let first = lm.glyphRange(forCharacterRange: NSRange(location: range.location, length: 1), actualCharacterRange: nil)
+            var line = lm.lineFragmentRect(forGlyphAt: first.location, effectiveRange: nil)
+            line.size.width = CGFloat(parsed.indent.count) * self.baseFontSize * 0.28 + self.baseFontSize * 1.7
+            add(line)
+        }
+    }
+
     // MARK: Checkbox clicks
 
     override func mouseDown(with event: NSEvent) {
@@ -428,6 +458,7 @@ final class EditorTextView: NSTextView {
 
     func restyle() {
         guard let storage = textStorage, !hasMarkedText() else { return }
+        defer { window?.invalidateCursorRects(for: self) }
         let full = NSRange(location: 0, length: storage.length)
         let base: [NSAttributedString.Key: Any] = [
             .font: NSFont.systemFont(ofSize: baseFontSize),
