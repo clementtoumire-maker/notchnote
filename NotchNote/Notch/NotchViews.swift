@@ -187,6 +187,7 @@ struct NotchPanelView: View {
     private var content: some View {
         VStack(spacing: 8) {
             header
+            if state.tab == .notes { titleRow }
             Group {
                 switch state.tab {
                 case .notes: notesPane
@@ -244,6 +245,28 @@ struct NotchPanelView: View {
             .opacity(0.85)
             .help("Find, switch and create tasks and folders")
 
+            Spacer(minLength: 4)
+
+            Picker("", selection: $state.tab) {
+                Text("Notes").tag(PanelTab.notes)
+                Text("Today").tag(PanelTab.today)
+                Text("Cards").tag(PanelTab.cards)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 170)
+
+            iconButton(isFav ? "star.fill" : "star", help: "Favorite (\u{2318}\u{21E7}S)") {
+                if let id = store.selectedID { store.toggleFavorite(id) }
+            }
+            iconButton("plus", help: "New task") { store.createTask(); state.tab = .notes }
+            taskMenu
+        }
+        .font(.system(size: 13))
+    }
+
+    private var titleRow: some View {
+        HStack(spacing: 8) {
             if editingTitle {
                 TextField("Title", text: titleBinding)
                     .textFieldStyle(.plain)
@@ -289,25 +312,9 @@ struct NotchPanelView: View {
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                 .help("Focus: \(focus.title)")
             }
-
-            Spacer(minLength: 4)
-
-            Picker("", selection: $state.tab) {
-                Text("Notes").tag(PanelTab.notes)
-                Text("Today").tag(PanelTab.today)
-                Text("Cards").tag(PanelTab.cards)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .frame(width: 170)
-
-            iconButton(isFav ? "star.fill" : "star", help: "Favorite (\u{2318}\u{21E7}S)") {
-                if let id = store.selectedID { store.toggleFavorite(id) }
-            }
-            iconButton("plus", help: "New task") { store.createTask(); state.tab = .notes }
-            taskMenu
+            Spacer(minLength: 0)
         }
-        .font(.system(size: 13))
+        .frame(height: 22)
     }
 
     private var taskMenu: some View {
