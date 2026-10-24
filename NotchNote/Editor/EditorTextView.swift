@@ -414,9 +414,9 @@ final class EditorTextView: NSTextView {
             let parsed = MarkdownCodec.parse(line)
             guard parsed.marker == .unchecked || parsed.marker == .checked else { return }
             let first = lm.glyphRange(forCharacterRange: NSRange(location: range.location, length: 1), actualCharacterRange: nil)
-            var line = lm.lineFragmentRect(forGlyphAt: first.location, effectiveRange: nil)
-            line.size.width = CGFloat(parsed.indent.count) * self.baseFontSize * 0.28 + self.baseFontSize * 1.7
-            add(line)
+            var frag = lm.lineFragmentRect(forGlyphAt: first.location, effectiveRange: nil)
+            frag.size.width = CGFloat(parsed.indent.count) * self.baseFontSize * 0.28 + self.baseFontSize * 1.7
+            add(frag)
         }
     }
 
